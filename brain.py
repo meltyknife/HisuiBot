@@ -26,19 +26,19 @@ class Brain():
         else:
             print('Hello, ' + name + '.')
 
-    def listen(self, text, debug = None):
+    def listen(self, name, text, debug = None):
         text = self.__change_text_format(text)
         e_value = self.evaluate_text(text)
         if debug: print('evaluate_value: ' + str(e_value))
         if e_value > 0:
             random.shuffle(self.positive_messages)
-            return self.positive_messages[0][0]
+            return self.positive_messages[0][0].replace('(NAME)', name)
         elif e_value == 0:
             random.shuffle(self.normal_messages)
-            return self.normal_messages[0][0]
+            return self.normal_messages[0][0].replace('(NAME)', name)
         elif e_value < 0:
             random.shuffle(self.negative_messages)
-            return self.negative_messages[0][0]
+            return self.negative_messages[0][0].replace('(NAME)', name)
 
     def __change_text_format(self, text):
         text = text.replace('\n', '')

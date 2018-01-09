@@ -14,7 +14,7 @@ class StreamListener(tweepy.StreamListener):
         user_text = status.text
 
         hisui.remember_person(user_s_name)
-        hisui_text = hisui.listen(user_text)
+        hisui_text = hisui.listen(user_name, user_text)
         self.tweet('@' + user_s_name + ' ' + hisui_text)
 
     def on_error(self, status_code):
