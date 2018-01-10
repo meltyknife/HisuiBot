@@ -12,7 +12,6 @@ class Brain():
         self.negative_messages = self.memory.get_table('negative_messages')
 
     def remember_person(self, name):
-        self.now_name = name
         table = 'persons'
         column = 'name'
         conditions = {'name':name}
@@ -26,26 +25,53 @@ class Brain():
         else:
             print('Hello, ' + name + '.')
 
-    def listen(self, name, text, debug = None):
+    def listen(self, s_name, text, debug = None):
+        self.remember_person(s_name)
         text = self.__change_text_format(text)
-        e_value = self.evaluate_text(text)
+        result = self.analysis_text(text)
+        self.is_change_call(s_name, result)
+        
+        table = 'persons'
+        column = 'call_name'
+        conditions = {'name':s_name}
+        call_name = self.memory.get_field(table, column, conditions)
+
+        e_value = self.evaluate_text(result)
         if debug: print('evaluate_value: ' + str(e_value))
         if e_value > 0:
             random.shuffle(self.positive_messages)
-            return self.positive_messages[0][0].replace('(NAME)', name)
+            return self.positive_messages[0][0].replace('(NAME)', call_name)
         elif e_value == 0:
             random.shuffle(self.normal_messages)
-            return self.normal_messages[0][0].replace('(NAME)', name)
+            return self.normal_messages[0][0].replace('(NAME)', call_name)
         elif e_value < 0:
             random.shuffle(self.negative_messages)
-            return self.negative_messages[0][0].replace('(NAME)', name)
+            return self.negative_messages[0][0].replace('(NAME)', call_name)
 
-    def __change_text_format(self, text):
-        text = text.replace('\n', '')
-        text_list = text.split(' ')
-        # text_list[0] is bot's screen name,
-        text = '、'.join(text_list[1:len(text_list)])
-        return text
+    #Special method(not generic)
+    def is_change_call(self, s_name, result):
+        #Only update call_name
+        mrphs = result.mrph_list()
+        for i in range(len(mrphs)):
+            if i > 0 and i + 1 < len(mrphs):
+                midasi  = mrphs[i].midasi
+                if midasi == 'と' or midasi == 'って':
+                    print(midasi)
+                    repname = mrphs[i + 1].repname
+                    if repname == '呼ぶ/よぶ' or repname == '呼べる/よべる':
+                        text = ''
+                        for mrph in mrphs: text += mrph.midasi
+                        print('Update call_name')
+                        tmp = text.split(midasi)
+                        call_name = tmp[0]
+                        call_name = call_name.replace('、', '')
+                        call_name = call_name.replace('@', '')
+                        print(call_name)
+                        table = 'persons'
+                        column = 'call_name'
+                        conditions = {'name':s_name}
+                        value = call_name
+                        self.memory.update_field(table, column, conditions, value)
 
     def update_call_name(self, call_name):
         table = 'persons'
@@ -64,6 +90,14 @@ class Brain():
         if debug: self.__print_analyzed(result)
         return result
 
+    def __change_text_format(self, text):
+        text = text.replace('\n', '')
+        text_list = text.split(' ')
+        # text_list[0] is bot's screen name,
+        text = '、'.join(text_list[1:len(text_list)])
+        return text
+
+
     def __print_analyzed(self, result):
         for mrph in result.mrph_list():
             print('見出し：' + mrph.midasi)
@@ -77,9 +111,8 @@ class Brain():
             print('代表表記：' + mrph.repname)
             print()
 
-    def evaluate_text(self, text):
+    def evaluate_text(self, result):
         e_value = 0
-        result = self.analysis_text(text)
         if result is None: return e_value
         table = 'polarity'
         column = 'value'
