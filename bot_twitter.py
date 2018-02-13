@@ -1,9 +1,11 @@
 import tweepy
 from my_tweepy import api as MY_API
 from brain import Brain
+from character import Character
 
-BOT_S_NAME = '@maidplum'
-hisui = Brain()
+BOT_S_NAME = '@maidHisui'
+#hisui = Brain()
+hisui = Character('Hisui')
 
 class StreamListener(tweepy.StreamListener):
     def on_status(self, status):
@@ -15,12 +17,15 @@ class StreamListener(tweepy.StreamListener):
         user_name = status.user.name
         user_text = status.text
 
-        hisui_text = hisui.listen(user_name, user_text)
+        hisui_result = hisui.listen(user_s_name, user_text, True)
+        hisui_text = hisui_result[0]
+        hisui_love = hisui_result[1]
         self.tweet(tweet_id, user_s_name, hisui_text)
-        try :
-            MY_API.create_friendship(user_id)
-        except :
-            print('alredy follow')
+        if hisui_love >= 70:
+            try:
+                MY_API.create_friendship(user_id)
+            except:
+                print('[Already follow]')
 
     def on_error(self, status_code):
         print('[Error status code: ' + str(status_code) + ']')
@@ -31,8 +36,8 @@ class StreamListener(tweepy.StreamListener):
     def tweet(self, tweet_id, s_name, text):
         footer = ' twitter.com/%s/status/%s' % (s_name, tweet_id)
         count = len(text + footer)
-        if count > 140:
-            start = 140 - len(footer)
+        if count > 280:
+            start = 280 - len(footer)
             end = len(text)
             text_list = list(text)
             del text_list[start:end]
